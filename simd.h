@@ -218,9 +218,17 @@ struct SIMD<float> {
 		return simde_mm256_load_ps(ptr);
 	}
 
+    static type loadU(const float *ptr) {
+        return simde_mm256_loadu_ps(ptr);
+    }
+
 	static void store(float *ptr, type a) {
 		simde_mm256_store_ps(ptr, a);
 	}
+
+    static void storeU(float *ptr, type a) {
+        simde_mm256_storeu_ps(ptr, a);
+    }
 	
 	static type set(float a) {
 		return simde_mm256_set1_ps(a);
@@ -488,9 +496,17 @@ struct SIMD<double> {
 		return simde_mm256_load_pd(ptr);
 	}
 
+    static type loadU(const double *ptr) {
+        return simde_mm256_loadu_pd(ptr);
+    }
+
 	static void store(double *ptr, type a) {
 		simde_mm256_store_pd(ptr, a);
 	}
+
+    static void storeU(double *ptr, type a) {
+        simde_mm256_storeu_pd(ptr, a);
+    }
 
 	static type set(double a) {
 		return simde_mm256_set1_pd(a);
