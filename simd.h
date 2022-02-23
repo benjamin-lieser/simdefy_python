@@ -3,6 +3,7 @@
 
 #include "simde/simde/x86/avx2.h"
 #include <cfloat>
+#include <iostream>
 
 template<typename F>
 struct SIMD;
