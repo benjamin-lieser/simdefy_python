@@ -18,7 +18,7 @@ void log1exp_scalar(F *input, F *output, size_t L) {
 template<typename F>
 typename SIMD<F>::type log1exp_simd_register(typename SIMD<F>::type data) {
     auto ones = SIMD<F>::set(1.0);
-    auto log2 = SIMD<F>::set((F)0.30102999566);
+    auto log2 = SIMD<F>::set((F)0.69314718056);
     auto log2e = SIMD<F>::set((F)1.44269504089);
     auto exp_inner = SIMD<F>::mul(data, log2e);
     auto exp = SIMD<F>::exp2(exp_inner);
