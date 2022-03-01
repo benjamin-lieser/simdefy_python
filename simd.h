@@ -11,34 +11,12 @@ struct SIMD;
 template<>
 struct SIMD<float> {
 	//Type of a float simd register
-
 	using type = simde__m256;
+    //Type of the integer register with the same size, in this case 32bit int
 	using intType = simde__m256i;
 
 	//Number of floats in a float register
 	static const unsigned int count = 8;
-	static const unsigned int size = 4;
-
-	static_assert(size == sizeof(float), "float has to be 4 byte");
-
-	static bool test() {
-		const float x = 127;
-		const float logx = std::log2(x);
-		const type x8 = set(x);
-		const type logErg = log2(x8);
-		const float logx8 = simde_mm256_cvtss_f32(logErg);
-
-		const float expx = std::exp2(x);
-		const type exp8 = set(x);
-		const type expErg = exp2(exp8);
-		const float expx8 = simde_mm256_cvtss_f32(expErg);
-
-		std::cout << logx << " " << logx8 << std::endl;
-
-		std::cout << expx << " " << expx8 << std::endl;
-
-		return std::abs(logx - logx8) < 1e-4 && std::abs(expx - expx8)/expx < 1e-4;
-	}
 
 	static type floor(type a) {
 		return simde_mm256_floor_ps(a);
@@ -75,6 +53,22 @@ struct SIMD<float> {
 	static type bit_and(type a, type b) {
 		return simde_mm256_and_ps(a, b);
 	}
+
+    static type bit_and_not(type a, type b) {
+        return simde_mm256_andnot_ps(a, b);
+    }
+
+    static type bit_xor(type a, type b) {
+        return simde_mm256_xor_ps(a, b);
+    }
+
+    static type flip_sign(type a) {
+        return bit_and_not(a, set(-0.0f));
+    }
+
+    static type abs(type a) {
+        return bit_and_not(a, set(-0.0f));
+    }
 
 	static type blendv(type a, type b, type mask) {
 		return simde_mm256_blendv_ps(a, b, mask);
@@ -138,6 +132,11 @@ struct SIMD<float> {
 		return blendv(X, CONST32_FLTMAX, maskedMax);
 	}
 
+    static type exp(type x) {
+        auto log2e = set(1.44269504089f);
+        return exp2(mul(x, log2e));
+    }
+
 	static type log2(type X) {
 
 		// Fast SIMD log2 for eight floats
@@ -199,6 +198,11 @@ struct SIMD<float> {
 		return R;
 	}
 
+    static type log(type x) {
+        auto log2_const = set(0.69314718056f);
+        return mul(log2(x), log2_const);
+    }
+
 	static type add(type a, type b) {
 		return simde_mm256_add_ps(a,b);
 	}
@@ -210,6 +214,10 @@ struct SIMD<float> {
 	static type sub(type a, type b) {
 		return simde_mm256_sub_ps(a, b);
 	}
+
+    static type div(type a, type b) {
+        return simde_mm256_div_ps(a, b);
+    }
 
 	static type max(type a, type b) {
 		return simde_mm256_max_ps(a,b);
@@ -245,28 +253,6 @@ struct SIMD<double> {
 
 	//Number of doubles in a double register
 	static const unsigned int count = 4;
-	static const unsigned int size = 8;
-
-	static_assert(size == sizeof(double), "double has to be 8 byte");
-
-	static bool test() {
-		const double x = 0;
-		const double logx = std::log2(x);
-		const type x8 = simde_mm256_set1_pd(x);
-		const type logErg = log2(x8);
-		const double logx8 = simde_mm256_cvtsd_f64(logErg);
-
-		const double expx = std::exp2(x);
-		const type exp8 = simde_mm256_set1_pd(x);
-		const type expErg = exp2(exp8);
-		const double expx8 = simde_mm256_cvtsd_f64(expErg);
-
-		std::cout << logx << " " << logx8 << std::endl;
-
-		std::cout << expx << " " << expx8 << std::endl;
-
-		return std::abs(logx - logx8) < 1e-4 && std::abs(expx - expx8)/expx < 1e-4;
-	}
 
 	static type floor(type a) {
 		return simde_mm256_floor_pd(a);
@@ -335,6 +321,22 @@ struct SIMD<double> {
 	static intType bit_or(intType a, intType b) {
 		return simde_mm256_or_si256(a, b);
 	}
+
+    static type bit_and_not(type a, type b) {
+        return simde_mm256_andnot_pd(a, b);
+    }
+
+    static type bit_xor(type a, type b) {
+        return simde_mm256_xor_pd(a, b);
+    }
+
+    static type flip_sign(type a) {
+        return bit_and_not(a, set(-0.0));
+    }
+
+    static type abs(type a) {
+        return bit_and_not(a, set(-0.0));
+    }
 
 	static type blendv(type a, type b, type mask) {
 		return simde_mm256_blendv_pd(a, b, mask);
@@ -409,6 +411,11 @@ struct SIMD<double> {
 		return x;
 	}
 
+    static type exp(type x) {
+        auto log2e = set(1.44269504089);
+        return exp2(mul(x, log2e));
+    }
+
 	static type log2(type x) {
 
 		/*
@@ -468,6 +475,11 @@ struct SIMD<double> {
 
 		return add(R, toFloat_fast(e));
 	}
+
+    static type log(type x) {
+        auto log2_const = set(0.69314718056);
+        return mul(log2(x), log2_const);
+    }
 
 	static type add(type a, type b) {
 		return simde_mm256_add_pd(a,b);
