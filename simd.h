@@ -539,7 +539,7 @@ unsigned int getSimdSize(unsigned int size) {
 
 template<typename F>
 F *allocAligned(unsigned int numberOfFloatingPoints) {
-	return (F *) std::aligned_alloc(32, getSimdSize<F>(numberOfFloatingPoints) * SIMD<F>::size);
+	return (F *) std::aligned_alloc(32, getSimdSize<F>(numberOfFloatingPoints) * sizeof(F));
 }
 
 template<typename F>
