@@ -1,14 +1,18 @@
 import numpy as np
 import simdefy
 import time
+import scipy
 
 
-x = np.random.random((100,100))
-x = np.array(x, dtype=np.double)
+x = np.random.random((5))
+x = np.array(x, dtype=np.float32)
+x = x + 10
 
 
 
-y = simdefy.log1exp(x)
-y2 = np.log(1+np.exp(x))
+y = simdefy.log_gamma(x)
+print(y)
 
-print(np.isclose(y,y2).all())
+print(scipy.special.loggamma(x))
+
+#print(np.isclose(y,y2).all())
