@@ -9,7 +9,7 @@ x = np.array(x, dtype=np.float32)
 x = x + 10
 
 
-
+simdefy.init()
 y = simdefy.log_gamma(x)
 print(y)
 

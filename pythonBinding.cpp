@@ -2,6 +2,7 @@
 #include "pybind11/include/pybind11/numpy.h"
 #include <vector>
 #include <iostream>
+#include <atomic>
 
 #include "functions.h"
 
@@ -17,7 +18,6 @@ const float eps = 0.01;
 
 template<typename F>
 void calc_precalc() {
-	std::cout << "here" << std::endl;
 	for(unsigned int i = 0; i < N; i++) {
 		F x_i = std::exp(eps * (float)i);
 		F G_i = std::lgamma(x_i);
@@ -33,9 +33,6 @@ void calc_precalc() {
 
 template<typename F>
 void log_gamma(F *input, F *output, unsigned int L) {
-	if(!precalc) {
-		calc_precalc<F>();
-	}
 	for(unsigned j = 0; j < L; j++) {
 		F x = input[j];
 		auto i = (unsigned long long) std::floor(std::log(x) / eps);
@@ -77,4 +74,5 @@ m.doc() = "simdefy module"; // optional module docstring
 //m.def("log_gamma", &log1exp_template<double>, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
 m.def("log_gamma", &log1exp_template<float>, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
 m.def("log_gamma", &log1exp_non_dense, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
+m.def("init", &calc_precalc<float>, "Init the lookup table");
 }
