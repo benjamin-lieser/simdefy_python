@@ -110,8 +110,7 @@ py::array_t<F> log_gamma_template(const py::array_t<F, py::array::c_style> &x) {
 }
 
 py::array log1exp_non_dense(const py::array&) {
-    std::cerr << "simdefy only works with dense array with dtype single or double" << std::endl;
-    exit(1);
+    throw std::invalid_argument("Arguemnt has to be a dense float32 numpy array");
 }
 
 
