@@ -7,34 +7,39 @@
 #include "functions.h"
 
 
-const unsigned int N = 2000;
+const int N = 2000;
+const int shift = 500;
 
 float pre1[N];
 float pre2[N];
 
-const float eps = 0.01;
+const float eps = 0.01f;
 const float rcp_eps = 1.0f / eps;
 
 template<typename F>
 void calc_precalc() {
-	for(unsigned int i = 0; i < N; i++) {
+	float *shift_pre1 = pre1 + shift;
+	float *shift_pre2 = pre2 + shift;
+	for(int i = 0 - shift; i < N-shift; i++) {
 		F x_i = std::exp(eps * (float)i);
 		F G_i = std::lgamma(x_i);
 		//Can be optimized, but this is just one time per loading of the library
 		F x_i1 = std::exp(eps * (float)(i+1));
 		F G_i1 = std::lgamma(x_i1);
 		
-		pre1[i] = G_i - ((G_i1 - G_i)*x_i / (x_i1 - x_i));
-		pre2[i] = (G_i1 - G_i) / (x_i1 - x_i);
+		shift_pre1[i] = G_i - ((G_i1 - G_i)*x_i / (x_i1 - x_i));
+		shift_pre2[i] = (G_i1 - G_i) / (x_i1 - x_i);
 	}
 }
 
 template<typename F>
 void log_gamma(F *input, F *output, unsigned int L) {
+	float *shift_pre1 = pre1 + shift;
+	float *shift_pre2 = pre2 + shift;
 	for(unsigned j = 0; j < L; j++) {
 		F x = input[j];
-		auto i = (unsigned long long) std::floor(std::log(x) / eps);
-		output[j] = pre1[i] + x * pre2[i];
+		auto i = (int) std::floor(std::log(x) / eps);
+		output[j] = shift_pre1[i] + x * shift_pre2[i];
 	}
 }
 
@@ -45,8 +50,8 @@ typename SIMD<F>::type log_gamma_simd_register(typename SIMD<F>::type data) {
     auto log_div_eps = SIMD<F>::mul(log, rcp_eps_reg);
     auto index = SIMD<F>::floor(log_div_eps);
     auto int_index = SIMD<F>::toInt_32(index);
-    auto pre1_reg = simde_mm256_i32gather_ps(pre1, int_index, 4);
-    auto pre2_reg = simde_mm256_i32gather_ps(pre2, int_index, 4);
+    auto pre1_reg = simde_mm256_i32gather_ps(pre1 + shift, int_index, 4);
+    auto pre2_reg = simde_mm256_i32gather_ps(pre2 + shift, int_index, 4);
     auto mul = SIMD<F>::mul(pre2_reg, data);
     return SIMD<F>::add(pre1_reg, mul);
 }
