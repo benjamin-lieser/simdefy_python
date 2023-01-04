@@ -33,7 +33,7 @@ void calc_precalc() {
 }
 
 template<typename F>
-void log_gamma(F *input, F *output, unsigned int L) {
+void log_gamma(F *input, F *output, size_t L) {
 	float *shift_pre1 = pre1 + shift;
 	float *shift_pre2 = pre2 + shift;
 	for(unsigned j = 0; j < L; j++) {
@@ -79,12 +79,10 @@ void log_gamma_simd(F *input, F *output, size_t L) {
 
 namespace py = pybind11;
 
-/**
- * Requires that the dtype of x is F
- */
-template<typename F>
-py::array_t<F> log1exp_template(const py::array_t<F, py::array::c_style> &x) {
-    py::buffer_info buffer_inf = x.request();
+template<typename F, void (*T)(F*, F*, size_t), int c_f_style>
+py::array_t<F> execute(const py::array_t<F, c_f_style> &x) {
+	
+	py::buffer_info buffer_inf = x.request();
 
     size_t L = buffer_inf.size;
 
@@ -94,27 +92,11 @@ py::array_t<F> log1exp_template(const py::array_t<F, py::array::c_style> &x) {
         freeAligned(foo);
     });
     auto ptr = reinterpret_cast<F*>(buffer_inf.ptr);
-    log_gamma(ptr, output, L);
+    T(ptr, output, L);
     return py::array_t<F>(buffer_inf.shape, buffer_inf.strides, output, free_when_done);
 }
 
-template<typename F>
-py::array_t<F> log_gamma_template(const py::array_t<F, py::array::c_style> &x) {
-    py::buffer_info buffer_inf = x.request();
-
-    size_t L = buffer_inf.size;
-
-    auto *output = allocAligned<F>(L);
-    py::capsule free_when_done(output, [](void *f) {
-        auto foo = reinterpret_cast<F*>(f);
-        freeAligned(foo);
-    });
-    auto ptr = reinterpret_cast<F*>(buffer_inf.ptr);
-    log_gamma_simd(ptr, output, L);
-    return py::array_t<F>(buffer_inf.shape, buffer_inf.strides, output, free_when_done);
-}
-
-py::array log1exp_non_dense(const py::array&) {
+py::array non_dense(const py::array&) {
     throw std::invalid_argument("Arguemnt has to be a dense float32 numpy array");
 }
 
@@ -122,9 +104,10 @@ py::array log1exp_non_dense(const py::array&) {
 PYBIND11_MODULE(simdefy, m) {
 m.doc() = "simdefy module"; // optional module docstring
 
-//m.def("log_gamma", &log1exp_template<double>, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
-m.def("log_gamma", &log1exp_template<float>, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
-m.def("log_gamma_avx2", &log_gamma_template<float>, "", py::arg("x"));
-m.def("log_gamma", &log1exp_non_dense, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
+m.def("log_gamma", &execute<float, log_gamma<float>, py::array::c_style>, "", py::arg("x"));
+m.def("log_gamma", &execute<float, log_gamma<float>, py::array::f_style>, "", py::arg("x"));
+m.def("log_gamma_avx2", &execute<float, log_gamma_simd<float>, py::array::c_style>, "", py::arg("x"));
+m.def("log_gamma_avx2", &execute<float, log_gamma_simd<float>, py::array::f_style>, "", py::arg("x"));
+m.def("log_gamma", &non_dense, "calculates log(1+exp) for an numpy array, returns a new array", py::arg("x"));
 m.def("init", &calc_precalc<float>, "Init the lookup table");
 }
